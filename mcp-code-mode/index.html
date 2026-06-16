@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hai tool thay vì bảy mươi — MCP Code Mode</title>
+<!-- fork: mintdark · rationale: technical dev talk, dark teal reads well on screen; engine = starter-deck scroll-snap kept verbatim, only :root recolored; SVG-only (no image deps) for clean GitHub Pages deploy -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&family=Lora:ital@0;1&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#0d2a26;      /* 60% bg — deep teal (mintdark) */
+    --slate:#143832;     /* 30% structure — card */
+    --paper:#f3efe8;
+    --ink:#e8f1ee;
+    --muted:#93a9a3;
+    --lime:#4dd9aa;      /* 10% accent — mint */
+    --lime-deep:#2db884;
+    --rule:rgba(77,217,170,.34);
+    --sans:'Be Vietnam Pro',system-ui,sans-serif;
+    --serif:'Lora',Georgia,serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+  body{background:var(--navy);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  .slide{
+    min-height:100vh;scroll-snap-align:start;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:6vh 8vw;position:relative;overflow:hidden;
+  }
+  .wrap{max-width:1100px;margin:0 auto;width:100%}
+  .slide-num{position:absolute;top:3vh;right:4vw;font-family:var(--mono);font-size:.8rem;color:var(--muted);letter-spacing:.1em}
+  .slide-kicker{font-family:var(--mono);font-size:.78rem;text-transform:uppercase;letter-spacing:.22em;color:var(--lime-deep);margin-bottom:1.2rem}
+  h1{font-size:clamp(1.7rem,4vw,3.1rem);line-height:1.18;font-weight:800;letter-spacing:-.01em}
+  h1 .hl{color:var(--lime)}
+  .lead{font-family:var(--serif);font-size:clamp(1.05rem,1.8vw,1.4rem);color:var(--muted);margin-top:1.4rem;max-width:48ch}
+  .nowrap{white-space:nowrap}
+  .rail{border-left:2px solid var(--rule);padding-left:1.6rem}
+
+  /* 2-col compare */
+  .cmp2{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem;margin-top:2.2rem}
+  .card{background:var(--slate);border-radius:14px;padding:1.5rem 1.6rem;border:1px solid rgba(255,255,255,.06)}
+  .card.bad{opacity:.72}
+  .card.good{border-color:var(--rule);box-shadow:0 0 0 1px var(--rule) inset}
+  .card .tag{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .card.good .tag{color:var(--lime)}
+  .card .t{font-size:1.15rem;font-weight:600;margin-top:.5rem;line-height:1.35}
+
+  figure{margin-top:2rem}
+  svg{width:100%;height:auto;display:block}
+  .svg-cap{font-family:var(--mono);font-size:.74rem;color:var(--muted);margin-top:.8rem;text-align:center}
+
+  /* deck-specific skin additions (not engine) */
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:2.2rem}
+  .metric{background:var(--slate);border:1px solid var(--rule);border-radius:14px;padding:1.5rem 1.4rem;text-align:center}
+  .metric .n{font-weight:800;font-size:clamp(1.6rem,3.4vw,2.6rem);color:var(--lime);letter-spacing:-.02em;line-height:1}
+  .metric .s{font-family:var(--mono);font-size:.74rem;color:var(--muted);margin-top:.7rem;letter-spacing:.04em}
+  .src{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-top:1.3rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.8rem}
+  .chip{font-family:var(--mono);font-size:.82rem;color:var(--ink);background:var(--slate);border:1px solid var(--rule);border-radius:999px;padding:.5rem 1rem}
+  .chip b{color:var(--lime)}
+
+  /* stage strip (speaker layer — toggled with S) */
+  .stage-strip{position:absolute;left:0;right:0;bottom:0;background:#08151a;
+    border-top:1px solid var(--rule);color:var(--muted);font-family:var(--mono);font-size:.8rem;
+    padding:.7rem 8vw;letter-spacing:.02em}
+  .stage-strip b{color:var(--lime)}
+  body.hide-stage .stage-strip{display:none}
+
+  /* presenter chrome bar */
+  .bar{position:fixed;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);z-index:50}
+  .bar>i{display:block;height:100%;background:var(--lime);width:0;transition:width .25s}
+
+  /* grid overview */
+  body.grid-mode{scroll-snap-type:none}
+  body.grid-mode .slide{min-height:auto;aspect-ratio:16/9;transform:scale(1);cursor:pointer;
+    border:1px solid rgba(255,255,255,.08);padding:2vh 2vw;justify-content:center}
+  body.grid-mode .stage-strip,body.grid-mode .bar{display:none}
+  body.grid-mode{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+  body.grid-mode h1{font-size:1rem;line-height:1.2}
+  body.grid-mode .cmp2,body.grid-mode figure,body.grid-mode .lead,body.grid-mode .metrics,body.grid-mode .chips{display:none}
+
+  @media (max-width:560px){.cmp2,.metrics{grid-template-columns:1fr}}
+  @media print{
+    html{scroll-snap-type:none}
+    .slide{min-height:auto;page-break-after:always;border:none}
+    .stage-strip,.bar{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- type: hero -->
+<section class="slide" id="slide-cover" data-title="Hai tool thay vì bảy mươi">
+  <span class="slide-num"></span>
+  <div class="wrap rail">
+    <div class="slide-kicker">MCP · Code Mode · Agent-First</div>
+    <h1>Hai tool thay vì <span class="hl">bảy mươi</span> —<br/>đưa backend sẵn sàng cho AI agent.</h1>
+    <p class="lead">Code Mode, mô hình bảo mật bạn phải tự dựng, và những gì một demo 60 giây không kịp nói.</p>
+    <figure>
+      <svg viewBox="0 0 900 120" role="img" aria-label="70 tools collapse to 2">
+        <g fill="#143832" stroke="#2f5249">
+          <!-- 70 tiny squares grid -->
+          <g>
+            <!-- render a 10x7 grid of squares -->
+            <!-- row generation done inline -->
+          </g>
+        </g>
+        <g>
+          <text x="60" y="30" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="13">CÁCH NGÂY THƠ</text>
+          <g fill="#143832" stroke="#2f5249" stroke-width="1">
+            <rect x="30" y="44" width="16" height="16" rx="3"/><rect x="52" y="44" width="16" height="16" rx="3"/><rect x="74" y="44" width="16" height="16" rx="3"/><rect x="96" y="44" width="16" height="16" rx="3"/><rect x="118" y="44" width="16" height="16" rx="3"/><rect x="140" y="44" width="16" height="16" rx="3"/><rect x="162" y="44" width="16" height="16" rx="3"/><rect x="184" y="44" width="16" height="16" rx="3"/><rect x="206" y="44" width="16" height="16" rx="3"/><rect x="228" y="44" width="16" height="16" rx="3"/>
+            <rect x="30" y="66" width="16" height="16" rx="3"/><rect x="52" y="66" width="16" height="16" rx="3"/><rect x="74" y="66" width="16" height="16" rx="3"/><rect x="96" y="66" width="16" height="16" rx="3"/><rect x="118" y="66" width="16" height="16" rx="3"/><rect x="140" y="66" width="16" height="16" rx="3"/><rect x="162" y="66" width="16" height="16" rx="3"/><rect x="184" y="66" width="16" height="16" rx="3"/><rect x="206" y="66" width="16" height="16" rx="3"/><rect x="228" y="66" width="16" height="16" rx="3"/>
+            <rect x="30" y="88" width="16" height="16" rx="3"/><rect x="52" y="88" width="16" height="16" rx="3"/><rect x="74" y="88" width="16" height="16" rx="3"/><rect x="96" y="88" width="16" height="16" rx="3"/><rect x="118" y="88" width="16" height="16" rx="3"/><rect x="140" y="88" width="16" height="16" rx="3"/><rect x="162" y="88" width="16" height="16" rx="3"/><rect x="184" y="88" width="16" height="16" rx="3"/><rect x="206" y="88" width="16" height="16" rx="3"/><rect x="228" y="88" width="16" height="16" rx="3"/>
+          </g>
+          <text x="300" y="78" fill="#4dd9aa" font-family="JetBrains Mono,monospace" font-size="28">→</text>
+          <text x="360" y="30" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="13">CODE MODE</text>
+          <rect x="360" y="44" width="92" height="60" rx="8" fill="#143832" stroke="#4dd9aa" stroke-width="1.5"/>
+          <text x="406" y="80" text-anchor="middle" fill="#e8f1ee" font-family="JetBrains Mono,monospace" font-size="14">search</text>
+          <rect x="464" y="44" width="92" height="60" rx="8" fill="#143832" stroke="#4dd9aa" stroke-width="1.5"/>
+          <text x="510" y="80" text-anchor="middle" fill="#e8f1ee" font-family="JetBrains Mono,monospace" font-size="14">execute</text>
+        </g>
+      </svg>
+      <div class="svg-cap">Lấy cảm hứng từ workshop "Agent-First với MCP" của Vibery (Toan Bui).</div>
+    </figure>
+  </div>
+  <div class="stage-strip">▸ Beat 1 · ~1 phút. <b>Mở: "70 endpoint, cách ngây thơ là 70 tool — và nó giết agent. Có cách tốt hơn."</b> · then →</div>
+</section>
+
+<!-- type: 2-col compare (Situation) -->
+<section class="slide" id="slide-new-consumer" data-title="AI agent là một loại người dùng API mới">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Bối cảnh</div>
+    <h1>AI agent giờ là một loại <span class="hl">"người dùng API"</span> hoàn toàn mới.</h1>
+    <div class="cmp2">
+      <div class="card bad">
+        <div class="tag">Người dùng cũ · human / CLI</div>
+        <div class="t">Gõ lệnh, đọc output, làm đúng tuần tự. Sai thì dừng lại hỏi.</div>
+      </div>
+      <div class="card good">
+        <div class="tag">Người dùng mới · AI agent</div>
+        <div class="t">Retry khi lỗi · tự ứng biến · đọc docs theo nghĩa đen. Đổi cách ta thiết kế bề mặt API.</div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-strip">▸ Beat 2 · ~1.5 phút. <b>Agent khác human: nó RETRY và improvise</b> — đó là lý do mọi thứ sau đây quan trọng · then →</div>
+</section>
+
+<!-- type: visual-diagram (Complication) -->
+<section class="slide" id="slide-context-burn" data-title="70 tool làm cháy context window">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Vấn đề</div>
+    <h1>Map mỗi endpoint thành 1 MCP tool sẽ làm <span class="hl">"cháy"</span> context.</h1>
+    <figure>
+      <svg viewBox="0 0 900 150" role="img" aria-label="context window filled by tool schemas before first question">
+        <text x="10" y="34" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="13">CONTEXT WINDOW — trước khi hỏi câu đầu tiên</text>
+        <rect x="10" y="48" width="880" height="46" rx="8" fill="#143832" stroke="#2f5249"/>
+        <rect x="10" y="48" width="616" height="46" rx="8" fill="#2db884" opacity="0.85"/>
+        <text x="318" y="77" text-anchor="middle" fill="#0d2a26" font-family="Be Vietnam Pro,sans-serif" font-weight="800" font-size="16">~70 tool-schema chiếm chỗ sẵn</text>
+        <text x="760" y="77" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="14">chỗ còn cho việc thật</text>
+        <text x="10" y="128" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="15">Tool schema vẫn chiếm context · &gt;50 tool agent dễ chọn nhầm · cache/lazy-load chỉ giảm tải, không xóa gốc.</text>
+      </svg>
+    </figure>
+  </div>
+  <div class="stage-strip">▸ Beat 3 · ~1.5 phút. <b>Schema quảng cáo mỗi turn; accuracy rớt khi tool list dài</b> · thêm endpoint = thêm schema phải sync · then →</div>
+</section>
+
+<!-- type: visual-diagram (Resolution core) -->
+<section class="slide" id="slide-code-mode" data-title="Code Mode: 2 tool search execute, agent viết code">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Giải pháp · Cloudflare Code Mode</div>
+    <h1>Code Mode đảo bài: 2 tool — <span class="hl">search + execute</span> — để agent VIẾT code.</h1>
+    <figure>
+      <svg viewBox="0 0 900 170" role="img" aria-label="code mode flow">
+        <rect x="10" y="60" width="150" height="54" rx="8" fill="#143832" stroke="#2f5249"/>
+        <text x="85" y="84" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="14">prompt người dùng</text>
+        <text x="85" y="103" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="12">"tìm đơn lỗi hôm nay"</text>
+        <line x1="162" y1="87" x2="205" y2="87" stroke="#4dd9aa" stroke-width="2"/><polygon points="205,87 193,81 193,93" fill="#4dd9aa"/>
+        <rect x="208" y="40" width="150" height="44" rx="8" fill="#143832" stroke="#4dd9aa" stroke-width="1.5"/>
+        <text x="283" y="67" text-anchor="middle" fill="#4dd9aa" font-family="JetBrains Mono,monospace" font-size="14">search(query)</text>
+        <rect x="208" y="92" width="150" height="44" rx="8" fill="#143832" stroke="#4dd9aa" stroke-width="1.5"/>
+        <text x="283" y="119" text-anchor="middle" fill="#4dd9aa" font-family="JetBrains Mono,monospace" font-size="14">execute(code)</text>
+        <line x1="360" y1="114" x2="403" y2="114" stroke="#4dd9aa" stroke-width="2"/><polygon points="403,114 391,108 391,120" fill="#4dd9aa"/>
+        <rect x="406" y="86" width="170" height="56" rx="8" fill="#0a1f1c" stroke="#4dd9aa" stroke-dasharray="5 4"/>
+        <text x="491" y="110" text-anchor="middle" fill="#e8f1ee" font-family="JetBrains Mono,monospace" font-size="12">sandbox chạy</text>
+        <text x="491" y="128" text-anchor="middle" fill="#e8f1ee" font-family="JetBrains Mono,monospace" font-size="12">code agent viết</text>
+        <line x1="578" y1="114" x2="621" y2="114" stroke="#93a9a3" stroke-width="2"/><polygon points="621,114 609,108 609,120" fill="#93a9a3"/>
+        <rect x="624" y="86" width="120" height="56" rx="8" fill="#143832" stroke="#2f5249"/>
+        <text x="684" y="118" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="14">API thật</text>
+        <text x="283" y="28" text-anchor="middle" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="11">2 tool · catalog từ OpenAPI</text>
+      </svg>
+      <div class="svg-cap">search để biết có gì → execute đoạn code nối nhiều call.</div>
+    </figure>
+    <p class="lead">Cloudflare lập luận: LLM thường giỏi <b style="color:var(--lime)">viết code</b> hơn là tự nối chuỗi tool call.</p>
+  </div>
+  <div class="stage-strip">▸ Beat 4 · ~2 phút. <b>Agent viết code chạy trong sandbox, không phải gọi 70 tool</b> · "lập trình viên tra docs → viết code, agent nên y vậy" · then →</div>
+</section>
+
+<!-- type: visual-diagram (accuracy guard) -->
+<section class="slide" id="slide-pattern-on-mcp" data-title="Code Mode là pattern trên MCP, không phải spec">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Đính chính quan trọng</div>
+    <h1>Nhớ rõ: Code Mode là pattern <span class="hl">TRÊN</span> MCP — không phải phần của spec.</h1>
+    <figure>
+      <svg viewBox="0 0 900 150" role="img" aria-label="code mode is a layer on top of MCP">
+        <rect x="250" y="22" width="400" height="46" rx="8" fill="#143832" stroke="#4dd9aa" stroke-width="1.5"/>
+        <text x="450" y="50" text-anchor="middle" fill="#4dd9aa" font-family="Be Vietnam Pro,sans-serif" font-weight="700" font-size="16">Code Mode — pattern (Cloudflare)</text>
+        <text x="660" y="50" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="11">bạn chọn dùng</text>
+        <line x1="450" y1="68" x2="450" y2="84" stroke="#93a9a3" stroke-width="2" stroke-dasharray="3 3"/>
+        <rect x="180" y="86" width="540" height="46" rx="8" fill="#143832" stroke="#2f5249"/>
+        <text x="450" y="114" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-weight="700" font-size="16">MCP — spec mở (tools · resources · prompts · transport)</text>
+      </svg>
+      <div class="svg-cap">MCP định nghĩa giao thức; Code Mode là cách DÙNG nó cho khéo.</div>
+    </figure>
+    <p class="lead">Đừng để người nghe tưởng MCP tự bảo đảm sandbox/scope — đó là phần bạn dựng thêm.</p>
+  </div>
+  <div class="stage-strip">▸ Beat 5 · ~1 phút. <b>Accuracy guard — tách "spec" khỏi "pattern"</b> · tránh hứa quá lời · then →</div>
+</section>
+
+<!-- type: big-number metrics -->
+<section class="slide" id="slide-numbers" data-title="Cloudflare benchmark: token rớt khủng">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Số liệu · Cloudflare benchmark</div>
+    <h1>Cloudflare đo: overhead 2,500 endpoint rớt <span class="hl">~1.17M → ~1,000</span> token.</h1>
+    <div class="metrics">
+      <div class="metric"><div class="n">~32%</div><div class="s">ít token hơn · task đơn giản</div></div>
+      <div class="metric"><div class="n">~81%</div><div class="s">ít token hơn · batch phức tạp</div></div>
+      <div class="metric"><div class="n">~1,000</div><div class="s">token cho 2,500 endpoint (từ ~1.17M)</div></div>
+    </div>
+    <div class="src">Nguồn: Cloudflare / WorkOS (benchmark vendor) · là <b>context overhead</b>, không phải tổng chi phí task. Đo của bạn sẽ khác — hãy đo.</div>
+  </div>
+  <div class="stage-strip">▸ Beat 6 · ~1.5 phút. <b>Số của vendor, về overhead — KHÔNG nói như chân lý</b> · luôn kèm "hãy tự đo" · then →</div>
+</section>
+
+<!-- type: 2-col compare (the shift) -->
+<section class="slide" id="slide-real-prize" data-title="Đáng copy nhất là security model bạn tự dựng">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Tiêu điểm thật</div>
+    <h1>Thứ đáng copy nhất KHÔNG phải token — mà là <span class="hl">security model</span> bạn TỰ dựng.</h1>
+    <div class="cmp2">
+      <div class="card bad">
+        <div class="tag">Cái lên báo</div>
+        <div class="t">Tiết kiệm token. Tốt — nhưng là phần dễ thấy, ai cũng khoe.</div>
+      </div>
+      <div class="card good">
+        <div class="tag">Cái đáng mang về</div>
+        <div class="t">Trust boundaries quanh code do model viết. Đây là các quyết định thiết kế BẠN phải implement, không tự có.</div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-strip">▸ Beat 7 · ~1 phút. <b>Lái sự chú ý từ tốc độ sang an toàn</b> · "tự build" — không phải MCP tặng kèm · then →</div>
+</section>
+
+<!-- type: visual-diagram (security) -->
+<section class="slide" id="slide-trust-boundary" data-title="Ba ranh giới tin cậy giữ token an toàn">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Mô hình bảo mật</div>
+    <h1>Ba ranh giới tin cậy giữ JWT an toàn <span class="hl">khỏi code do model viết</span>.</h1>
+    <figure>
+      <svg viewBox="0 0 900 180" role="img" aria-label="trust boundary: sandbox, host proxy injects JWT, API">
+        <rect x="10" y="40" width="250" height="100" rx="10" fill="#0a1f1c" stroke="#4dd9aa" stroke-dasharray="5 4"/>
+        <text x="135" y="66" text-anchor="middle" fill="#4dd9aa" font-family="JetBrains Mono,monospace" font-size="12">SANDBOX</text>
+        <text x="135" y="92" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="14">code agent viết</text>
+        <text x="135" y="114" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="12">không gọi mạng tùy ý</text>
+        <text x="135" y="132" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="12">không thấy JWT</text>
+        <line x1="262" y1="90" x2="312" y2="90" stroke="#93a9a3" stroke-width="2"/><polygon points="312,90 300,84 300,96" fill="#93a9a3"/>
+        <rect x="314" y="40" width="270" height="100" rx="10" fill="#143832" stroke="#4dd9aa" stroke-width="1.5"/>
+        <text x="449" y="66" text-anchor="middle" fill="#4dd9aa" font-family="JetBrains Mono,monospace" font-size="12">HOST PROXY</text>
+        <text x="449" y="92" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="14">inject Authorization (JWT)</text>
+        <text x="449" y="114" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="14">token mang scope của user</text>
+        <text x="449" y="132" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="12">chạy ở host, không vào sandbox</text>
+        <line x1="586" y1="90" x2="636" y2="90" stroke="#93a9a3" stroke-width="2"/><polygon points="636,90 624,84 624,96" fill="#93a9a3"/>
+        <rect x="638" y="40" width="250" height="100" rx="10" fill="#143832" stroke="#2f5249"/>
+        <text x="763" y="84" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="15">API thật</text>
+        <text x="763" y="106" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="12">enforce scope → 403 nếu thiếu quyền</text>
+        <text x="135" y="165" text-anchor="middle" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="11">① sandbox kín</text>
+        <text x="449" y="165" text-anchor="middle" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="11">② JWT ở host-side</text>
+        <text x="763" y="165" text-anchor="middle" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="11">③ JWT mang scope user</text>
+      </svg>
+    </figure>
+  </div>
+  <div class="stage-strip">▸ Beat 8 · ~2 phút. <b>Code model viết = bề mặt prompt-injection</b> · khóa outbound → injection co từ "mọi URL" xuống "sai endpoint cùng API" · then →</div>
+</section>
+
+<!-- type: visual-diagram (generator) -->
+<section class="slide" id="slide-generator" data-title="Sinh MCP server từ OpenAPI, đừng code tay">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Tự động hóa</div>
+    <h1>Đừng code tay từng MCP server — <span class="hl">SINH</span> nó từ OpenAPI spec.</h1>
+    <figure>
+      <svg viewBox="0 0 900 130" role="img" aria-label="OpenAPI to MCP generator pipeline">
+        <rect x="10" y="44" width="170" height="50" rx="8" fill="#143832" stroke="#2f5249"/>
+        <text x="95" y="74" text-anchor="middle" fill="#e8f1ee" font-family="JetBrains Mono,monospace" font-size="13">OpenAPI spec</text>
+        <line x1="182" y1="69" x2="225" y2="69" stroke="#4dd9aa" stroke-width="2"/><polygon points="225,69 213,63 213,75" fill="#4dd9aa"/>
+        <rect x="228" y="40" width="180" height="58" rx="8" fill="#143832" stroke="#4dd9aa" stroke-width="1.5"/>
+        <text x="318" y="65" text-anchor="middle" fill="#4dd9aa" font-family="Be Vietnam Pro,sans-serif" font-weight="700" font-size="14">generator</text>
+        <text x="318" y="84" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="11">1 lần, dùng lại mọi service</text>
+        <line x1="410" y1="69" x2="453" y2="69" stroke="#4dd9aa" stroke-width="2"/><polygon points="453,69 441,63 441,75" fill="#4dd9aa"/>
+        <rect x="456" y="32" width="434" height="74" rx="8" fill="#0a1f1c" stroke="#2f5249"/>
+        <text x="673" y="58" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="14">server search + execute</text>
+        <text x="673" y="80" text-anchor="middle" fill="#93a9a3" font-family="Be Vietnam Pro,sans-serif" font-size="12">+ OAuth flow + storage — có thể wire sẵn</text>
+      </svg>
+    </figure>
+    <p class="lead">Build một lần, dùng lại. Nhưng đừng dựng "factory 30 service" ngày đầu — YAGNI.</p>
+  </div>
+  <div class="stage-strip">▸ Beat 9 · ~1 phút. <b>Hand-code mỗi server không scale</b> · làm 1 service tay trước rồi mới templatize · then →</div>
+</section>
+
+<!-- type: 2-col compare (caveat 1) -->
+<section class="slide" id="slide-myth-cost" data-title="Demo 60 giây là happy path, tiền thật là token LLM">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Trừ hao · 1</div>
+    <h1>Demo "60 giây" là happy path — tiền thật là <span class="hl">token LLM</span>, không phải hạ tầng.</h1>
+    <div class="cmp2">
+      <div class="card bad">
+        <div class="tag">Lời quảng cáo</div>
+        <div class="t">"Live trong 60 giây" · "chạy free tier ~$0".</div>
+      </div>
+      <div class="card good">
+        <div class="tag">Thực tế phải lo</div>
+        <div class="t">Deploy thật: DNS, OAuth, cold-start, vài vòng debug. "Free" chỉ là hosting — token LLM mới scale theo usage.</div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-strip">▸ Beat 10 · ~1.5 phút. <b>Budget cho debug loop + dòng chi phí token</b> · "gần như free" là sai số · then →</div>
+</section>
+
+<!-- type: visual-diagram (caveat 2) -->
+<section class="slide" id="slide-idempotency" data-title="Idempotency là việc của bạn, agent retry double-charge">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Trừ hao · 2 (quan trọng nhất với tiền)</div>
+    <h1>Với tiền: idempotency là việc của <span class="hl">BẠN</span> — agent retry = double-charge.</h1>
+    <figure>
+      <svg viewBox="0 0 900 130" role="img" aria-label="agent retry causes double create">
+        <rect x="10" y="46" width="130" height="48" rx="8" fill="#143832" stroke="#2f5249"/>
+        <text x="75" y="75" text-anchor="middle" fill="#e8f1ee" font-family="Be Vietnam Pro,sans-serif" font-size="14">agent</text>
+        <path d="M150 70 q40 -34 80 0" fill="none" stroke="#4dd9aa" stroke-width="2"/><polygon points="230,70 220,60 216,72" fill="#4dd9aa"/>
+        <text x="190" y="34" text-anchor="middle" fill="#93a9a3" font-family="JetBrains Mono,monospace" font-size="11">retry</text>
+        <rect x="240" y="46" width="220" height="48" rx="8" fill="#143832" stroke="#2f5249"/>
+        <text x="350" y="75" text-anchor="middle" fill="#e8f1ee" font-family="JetBrains Mono,monospace" font-size="13">POST /orders  ×2</text>
+        <line x1="462" y1="70" x2="505" y2="70" stroke="#e06a5a" stroke-width="2"/><polygon points="505,70 493,64 493,76" fill="#e06a5a"/>
+        <rect x="508" y="46" width="240" height="48" rx="8" fill="#2a1614" stroke="#e06a5a"/>
+        <text x="628" y="75" text-anchor="middle" fill="#f0b6ad" font-family="Be Vietnam Pro,sans-serif" font-weight="700" font-size="14">⚠ tạo trùng / charge 2 lần</text>
+      </svg>
+    </figure>
+    <p class="lead">Thiết kế idempotency-key TRƯỚC khi cho agent ghi. Và <b style="color:var(--lime)">search</b> chỉ tốt khi OpenAPI summary/description viết tốt.</p>
+  </div>
+  <div class="stage-strip">▸ Beat 11 · ~1.5 phút. <b>Đây là rủi ro số 1 khi đụng tiền</b> · đừng mặc định execute() tự thêm idempotency · then →</div>
+</section>
+
+<!-- type: ladder (rollout) -->
+<section class="slide" id="slide-rollout" data-title="Lăn bánh an toàn: read-only trước rồi mở write">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">Triển khai an toàn</div>
+    <h1>Lăn bánh an toàn: <span class="hl">read-only trước</span>, rồi mới mở đường write.</h1>
+    <div class="chips">
+      <div class="chip"><b>1.</b> Read-only — agent query &amp; chẩn đoán (đơn lỗi, giao dịch stuck)</div>
+      <div class="chip"><b>2.</b> Write có kiểm soát — "7 câu hỏi": ai gọi? idempotent? read/write? có log/trace?</div>
+      <div class="chip"><b>3.</b> Self-host — nếu vướng data residency; pattern portable khi bạn kiểm soát runtime/dữ liệu</div>
+    </div>
+    <p class="lead">Bề mặt cho agent là quyết định thiết kế — đừng để mọi endpoint mở mặc định.</p>
+  </div>
+  <div class="stage-strip">▸ Beat 12 · ~1.5 phút. <b>Read-only là cửa an toàn nhất để bắt đầu</b> · 7 câu hỏi = cổng trước khi MCP-ify · then →</div>
+</section>
+
+<!-- type: hero (close) -->
+<section class="slide" id="slide-close" data-title="AI agent là API consumer mới, thiết kế và chứng minh an toàn">
+  <span class="slide-num"></span>
+  <div class="wrap rail">
+    <div class="slide-kicker">Chốt</div>
+    <h1>AI agent là API consumer mới —<br/>hãy thiết kế và <span class="hl">CHỨNG MINH</span> nó an toàn.</h1>
+    <p class="lead">Code Mode trả lời "expose bề mặt API thế nào". Phần khó &amp; bền hơn: quyết định agent được chạm tới ĐÂU — và chứng minh điều đó an toàn.</p>
+    <div class="chips">
+      <div class="chip">Cảm ơn workshop <b>Vibery (Toan Bui)</b></div>
+      <div class="chip">Bạn có để agent ghi vào API <b>production</b> không?</div>
+      <div class="chip">quy267.github.io/<b>mcp-code-mode</b></div>
+    </div>
+  </div>
+  <div class="stage-strip">▸ Beat 13 · ~1 phút. <b>Đóng bằng "thiết kế + chứng minh an toàn"</b> · cảm ơn Vibery · mời thảo luận. KẾT.</div>
+</section>
+
+<div class="bar"><i id="bar"></i></div>
+
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('.slide')];
+  const total=slides.length;
+  // auto slide numbering + derived total
+  slides.forEach((s,i)=>{const n=s.querySelector('.slide-num'); if(n) n.textContent=String(i+1).padStart(2,'0')+' / '+String(total).padStart(2,'0');});
+
+  // hash sync by EXACT id (match s.id, never assume numeric ids)
+  function idx(){const h=location.hash.slice(1);return slides.findIndex(s=>s.id===h);}
+  function go(i){i=Math.max(0,Math.min(total-1,i));slides[i].scrollIntoView();history.replaceState(null,'','#'+slides[i].id);updateBar(i);}
+  function current(){let best=0,bd=1e9;slides.forEach((s,i)=>{const d=Math.abs(s.getBoundingClientRect().top);if(d<bd){bd=d;best=i;}});return best;}
+  function updateBar(i){const b=document.getElementById('bar');if(b)b.style.width=((i)/(total-1)*100)+'%';}
+
+  if(location.hash){const i=idx();if(i>=0)setTimeout(()=>go(i),0);}
+  window.addEventListener('scroll',()=>updateBar(current()),{passive:true});
+  updateBar(0);
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(current()+1);}
+    else if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(current()-1);}
+    else if(e.key==='Escape'||e.key.toLowerCase()==='g'){document.body.classList.toggle('grid-mode');}
+    else if(e.key.toLowerCase()==='s'){document.body.classList.toggle('hide-stage');}
+    else if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+  });
+  // click a slide in grid mode to jump to it
+  slides.forEach((s,i)=>s.addEventListener('click',()=>{if(document.body.classList.contains('grid-mode')){document.body.classList.remove('grid-mode');go(i);}}));
+})();
+</script>
+</body>
+</html>
