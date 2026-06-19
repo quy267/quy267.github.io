@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Coder → Agentic Engineer</title>
+  <!-- fork: mintdark · rationale: technical internal training, dark room friendly, SVG-first, no external assets -->
+  <style>
+    :root {
+      --bg: #071512;
+      --panel: #0d211d;
+      --panel2: #123029;
+      --ink: #effcf5;
+      --muted: #a8c8bd;
+      --line: #254940;
+      --mint: #72f0bd;
+      --lime: #c7f36b;
+      --amber: #ffc46b;
+      --rose: #ff8fa3;
+      --blue: #8ac7ff;
+      --shadow: rgba(0,0,0,.35);
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); letter-spacing: 0; }
+    body.hide-stage .stage-strip { display: none; }
+    .slide { min-height: 100vh; scroll-snap-align: start; position: relative; display: grid; place-items: center; padding: 48px 72px 82px; overflow: hidden; }
+    .slide::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(114,240,189,.05), transparent 35%, rgba(255,196,107,.04)); pointer-events: none; }
+    .wrap { position: relative; z-index: 1; width: min(1120px, 100%); min-height: 640px; display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 18px; }
+    .slide-kicker { color: var(--mint); font-family: var(--mono); font-size: .82rem; text-transform: uppercase; }
+    h1 { margin: 0; max-width: 920px; font-size: 3.55rem; line-height: 1.03; font-weight: 760; letter-spacing: 0; }
+    .lead { margin: 0; max-width: 740px; color: var(--muted); font-size: 1.26rem; line-height: 1.45; }
+    .slide-num { position: absolute; top: 30px; right: 38px; color: var(--muted); font-family: var(--mono); font-size: .88rem; z-index: 2; }
+    .stage-strip { align-self: end; width: 100%; border: 1px solid var(--line); background: rgba(13,33,29,.92); color: var(--muted); padding: 12px 14px; border-radius: 8px; font-size: .86rem; line-height: 1.35; box-shadow: 0 12px 32px var(--shadow); }
+    figure.viz { margin: 12px 0 0; min-height: 300px; border-top: 1px solid var(--line); padding-top: 20px; }
+    figure.viz svg { width: 100%; max-height: 370px; display: block; }
+    figure.viz figcaption { color: var(--muted); font-family: var(--mono); font-size: .84rem; margin-top: 8px; }
+    svg rect { fill: var(--panel2); stroke: var(--line); stroke-width: 2; }
+    svg text { fill: var(--ink); font-size: 22px; font-family: var(--sans); white-space: pre; }
+    svg .meta { fill: var(--muted); font-size: 18px; font-family: var(--mono); }
+    svg line, svg .axis { stroke: var(--mint); stroke-width: 3; }
+    svg path { fill: var(--mint); }
+    svg .boundary { fill: rgba(114,240,189,.06); stroke: var(--mint); stroke-dasharray: 8 8; }
+    svg .curve { fill: none; stroke: var(--mint); stroke-width: 4; }
+    svg .warn { fill: none; stroke: var(--amber); stroke-width: 4; }
+    svg .cloud { fill: rgba(138,199,255,.11); stroke: var(--blue); stroke-width: 3; }
+    .matrix, .ownership { display: grid; gap: 10px; align-self: start; margin-top: 22px; }
+    .matrix { grid-template-columns: 160px 1fr 1fr; max-width: 860px; }
+    .matrix > * { min-height: 78px; border: 1px solid var(--line); border-radius: 8px; display: grid; place-items: center; text-align: center; padding: 10px; background: var(--panel); }
+    .matrix b { color: var(--muted); font-family: var(--mono); font-size: .9rem; }
+    .matrix .bad { border-color: rgba(255,143,163,.55); color: var(--rose); font-weight: 760; }
+    .matrix .good { border-color: rgba(114,240,189,.7); color: var(--mint); font-weight: 760; }
+    .matrix .muted { color: var(--muted); }
+    .layers, .memory, .checks { margin-top: 22px; display: grid; gap: 12px; max-width: 780px; }
+    .layers div, .memory div, .checks div { border: 1px solid var(--line); background: var(--panel); padding: 17px 20px; border-radius: 8px; font-size: 1.16rem; }
+    .layers div:nth-child(odd), .memory div:nth-child(even), .checks div:nth-child(odd) { border-color: rgba(114,240,189,.55); }
+    .triad, .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 26px; }
+    .triad div, .roadmap div { min-height: 190px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 24px; display: grid; align-content: center; gap: 12px; }
+    .triad b, .roadmap b { color: var(--mint); font-size: 2rem; }
+    .triad span, .roadmap span { color: var(--muted); font-size: 1.1rem; }
+    .ownership { grid-template-columns: repeat(3, 1fr); max-width: 880px; }
+    .ownership div { min-height: 74px; border: 1px solid var(--line); border-radius: 8px; display: grid; place-items: center; background: var(--panel); padding: 10px; text-align: center; }
+    .ownership .head { color: var(--mint); font-family: var(--mono); }
+    .ownership .ok { border-color: rgba(114,240,189,.65); }
+    .bars { display: grid; gap: 18px; max-width: 820px; margin-top: 36px; }
+    .bars div { display: grid; grid-template-columns: 1fr 80px 100px; gap: 16px; align-items: center; color: var(--muted); }
+    .bars div::before { content: ""; display: block; grid-column: 1; height: 24px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .bars span { grid-column: 1; grid-row: 1; height: 24px; border-radius: 8px; background: linear-gradient(90deg, var(--mint), var(--lime)); z-index: 1; }
+    .bars b { color: var(--ink); font-size: 1.8rem; }
+    .bars em { font-style: normal; font-family: var(--mono); }
+    .chrome { position: fixed; left: 22px; right: 22px; bottom: 18px; z-index: 20; display: flex; align-items: center; gap: 12px; color: var(--muted); font-family: var(--mono); }
+    .bar { flex: 1; height: 4px; background: rgba(255,255,255,.12); border-radius: 999px; overflow: hidden; }
+    .bar i { display: block; width: 0; height: 100%; background: var(--mint); }
+    .chrome button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+    body.grid-mode { overflow: auto; }
+    body.grid-mode .slide { min-height: 38vh; transform: scale(.92); border-bottom: 1px solid var(--line); }
+    body.grid-mode .stage-strip { display: none; }
+    @media (max-width: 760px) {
+      .slide { padding: 32px 22px 78px; }
+      .wrap { min-height: 620px; gap: 14px; }
+      h1 { font-size: 2.25rem; line-height: 1.08; }
+      .lead { font-size: 1.05rem; }
+      .slide-num { top: 18px; right: 22px; }
+      .triad, .roadmap, .ownership { grid-template-columns: 1fr; }
+      .matrix { grid-template-columns: 96px 1fr 1fr; font-size: .82rem; }
+      .matrix > * { min-height: 58px; padding: 6px; }
+      figure.viz { min-height: 220px; }
+      .stage-strip { font-size: .78rem; }
+    }
+    @media print {
+      html { scroll-snap-type: none; }
+      .slide { page-break-after: always; min-height: 100vh; }
+      .chrome { display: none; }
+    }
+  </style>
+</head>
+<body>
+<section class="slide" id="slide-agentic-engineer" data-title="Agentic engineer thiết kế workflow, không chỉ prompt.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">SITUATION</div>
+    <h1>Agentic engineer thiết kế workflow, không chỉ prompt.</h1>
+    <p class="lead">Mục tiêu là giao việc an toàn cho agent như teammate.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Agentic engineering = prompt được nâng cấp thành workflow."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><g class=""><rect x="35" y="245" width="150" height="52" rx="8"></rect><text text-anchor="middle"><tspan x="110" y="276">Prompt</tspan></text></g><g class=""><rect x="205" y="200" width="150" height="52" rx="8"></rect><text text-anchor="middle"><tspan x="280" y="231">Context</tspan></text></g><g class=""><rect x="375" y="155" width="150" height="52" rx="8"></rect><text text-anchor="middle"><tspan x="450" y="186">Tools</tspan></text></g><g class=""><rect x="545" y="110" width="150" height="52" rx="8"></rect><text text-anchor="middle"><tspan x="620" y="141">Tests</tspan></text></g><g class=""><rect x="715" y="65" width="150" height="52" rx="8"></rect><text text-anchor="middle"><tspan x="790" y="96">Review</tspan></text></g>
+        <line x1="185" y1="270" x2="205" y2="225" marker-end="url(#arrow)"></line><line x1="355" y1="225" x2="375" y2="180" marker-end="url(#arrow)"></line><line x1="525" y1="180" x2="545" y2="135" marker-end="url(#arrow)"></line><line x1="695" y1="135" x2="715" y2="90" marker-end="url(#arrow)"></line></svg><figcaption>Agentic engineering = prompt được nâng cấp thành workflow.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 1 · S. Mở bằng sự khác biệt: khóa học không chỉ dạy tool, mà dạy cách biến tool thành workflow có kiểm soát. Nhấn rằng người học vẫn là owner của context, permission, tests và review.</div>
+  </div>
+</section>
+<section class="slide" id="slide-course-map" data-title="Khóa học đi từ playground đến production agent workflows.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">SITUATION</div>
+    <h1>Khóa học đi từ playground đến production agent workflows.</h1>
+    <p class="lead">3 tuần: vibe coding, vibe engineering, agentic engineering.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Arc của khóa học: từ thử nhanh đến workflow có kiểm soát."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><g class=""><rect x="70" y="120" width="210" height="92" rx="8"></rect><text text-anchor="middle"><tspan x="175" y="157">Week 1</tspan><tspan x="175" y="185">Vibe coding</tspan></text></g><g class=""><rect x="345" y="120" width="210" height="92" rx="8"></rect><text text-anchor="middle"><tspan x="450" y="157">Week 2</tspan><tspan x="450" y="185">Vibe engineering</tspan></text></g><g class=""><rect x="620" y="120" width="210" height="92" rx="8"></rect><text text-anchor="middle"><tspan x="725" y="157">Week 3</tspan><tspan x="725" y="185">Agentic engineering</tspan></text></g>
+        <line x1="280" y1="166" x2="345" y2="166" marker-end="url(#arrow)"></line><line x1="555" y1="166" x2="620" y2="166" marker-end="url(#arrow)"></line>
+        <text class="meta" x="450" y="270" text-anchor="middle">3 sections · 95 lectures · 16h18m</text></svg><figcaption>Arc của khóa học: từ thử nhanh đến workflow có kiểm soát.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 2 · S. Dùng số public syllabus: 3 sections, 95 lectures, 16h18m. Không cần kể hết curriculum; chỉ chỉ ra arc từ demo vui đến capstone trading workstation.</div>
+  </div>
+</section>
+<section class="slide" id="slide-vibe-risk" data-title="Vibe coding nhanh, nhưng dễ thành slop thiếu guardrails.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">COMPLICATION</div>
+    <h1>Vibe coding nhanh, nhưng dễ thành slop thiếu guardrails.</h1>
+    <p class="lead">Tốc độ chỉ có giá trị khi diff vẫn review được.</p>
+    <div class="matrix"><div></div><b>Guardrails thấp</b><b>Guardrails cao</b><b>Tốc độ cao</b><div class="bad">Slop</div><div class="good">Fast + safe</div><b>Tốc độ thấp</b><div class="muted">Manual drag</div><div class="muted">Boring reliable</div></div>
+    <div class="stage-strip">▸ Beat 3 · C. Complication đầu tiên: cùng một kỹ thuật tạo ra prototype nhanh cũng có thể tạo ra code khó maintain. Từ đây chuyển sang guardrails.</div>
+  </div>
+</section>
+<section class="slide" id="slide-context" data-title="AGENTS.md biến context thành tài sản tái dùng.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>AGENTS.md biến context thành tài sản tái dùng.</h1>
+    <p class="lead">Context tốt giảm guessing và giảm nhắc lại mỗi phiên.</p>
+    <div class="layers"><div>Repo commands</div><div>Conventions</div><div>Constraints</div><div>Security rules</div><div>Definition of done</div></div>
+    <div class="stage-strip">▸ Beat 4 · R. Giải thích context engineering bằng ngôn ngữ team: commands, conventions, constraints, security, done criteria. Đây là việc nên làm trước khi mua thêm tool.</div>
+  </div>
+</section>
+<section class="slide" id="slide-yolo" data-title="YOLO chỉ an toàn trong sandbox có rollback.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>YOLO chỉ an toàn trong sandbox có rollback.</h1>
+    <p class="lead">Không secrets, branch nhỏ, tests chạy được, deploy có gate.</p>
+    <figure class="viz"><svg viewBox="0 0 900 350" role="img" aria-label="Autonomy nên chạy trong vùng có biên rõ."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><rect class="boundary" x="170" y="65" width="560" height="210" rx="18"></rect>
+        <g class=""><rect x="220" y="125" width="145" height="70" rx="8"></rect><text text-anchor="middle"><tspan x="292.5" y="165">Agent</tspan></text></g><g class=""><rect x="395" y="125" width="145" height="70" rx="8"></rect><text text-anchor="middle"><tspan x="467.5" y="165">Branch</tspan></text></g><g class=""><rect x="570" y="125" width="145" height="70" rx="8"></rect><text text-anchor="middle"><tspan x="642.5" y="165">Tests</tspan></text></g>
+        <line x1="365" y1="160" x2="395" y2="160" marker-end="url(#arrow)"></line><line x1="540" y1="160" x2="570" y2="160" marker-end="url(#arrow)"></line>
+        <text class="meta" x="450" y="315" text-anchor="middle">Secrets scoped · deploy gated · rollback ready</text></svg><figcaption>Autonomy nên chạy trong vùng có biên rõ.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 5 · R. Đây là policy slide: YOLO là mode cho môi trường cách ly, không phải phong cách làm việc trên repo thật. Nhấn deploy vẫn cần human approval.</div>
+  </div>
+</section>
+<section class="slide" id="slide-surfaces" data-title="MCP, skills, plugins giải ba bài toán khác nhau.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>MCP, skills, plugins giải ba bài toán khác nhau.</h1>
+    <p class="lead">Tool access, reusable playbook, packaged capability.</p>
+    <div class="triad"><div><b>MCP</b><span>external tools</span></div><div><b>Skills</b><span>team playbooks</span></div><div><b>Plugins</b><span>packaged capability</span></div></div>
+    <div class="stage-strip">▸ Beat 6 · R. Giúp team tránh nhầm: MCP để gọi hệ thống ngoài, skill để đóng gói quy trình, plugin để phân phối capability. Rủi ro là quyền và supply chain.</div>
+  </div>
+</section>
+<section class="slide" id="slide-cli" data-title="CLI agents mạnh nhất khi đi cùng Git và tests.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>CLI agents mạnh nhất khi đi cùng Git và tests.</h1>
+    <p class="lead">Không có branch/test/review, agent chỉ là máy tạo diff.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="CLI agent cần nằm trong Git workflow."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><g class=""><rect x="60" y="135" width="130" height="60" rx="8"></rect><text text-anchor="middle"><tspan x="125" y="170">Spec</tspan></text></g><g class=""><rect x="230" y="135" width="130" height="60" rx="8"></rect><text text-anchor="middle"><tspan x="295" y="170">Branch</tspan></text></g><g class=""><rect x="400" y="135" width="130" height="60" rx="8"></rect><text text-anchor="middle"><tspan x="465" y="170">Agent diff</tspan></text></g><g class=""><rect x="570" y="135" width="130" height="60" rx="8"></rect><text text-anchor="middle"><tspan x="635" y="170">Tests</tspan></text></g><g class=""><rect x="740" y="135" width="110" height="60" rx="8"></rect><text text-anchor="middle"><tspan x="795" y="170">PR</tspan></text></g>
+        <line x1="190" y1="165" x2="230" y2="165" marker-end="url(#arrow)"></line><line x1="360" y1="165" x2="400" y2="165" marker-end="url(#arrow)"></line><line x1="530" y1="165" x2="570" y2="165" marker-end="url(#arrow)"></line><line x1="700" y1="165" x2="740" y2="165" marker-end="url(#arrow)"></line></svg><figcaption>CLI agent cần nằm trong Git workflow.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 7 · R. Đặt Claude Code/Codex vào engineering workflow quen thuộc. Không bán một tool cụ thể; bán invariant: mỗi task cần branch, command, evidence, PR.</div>
+  </div>
+</section>
+<section class="slide" id="slide-ticket-pr" data-title="Jira-to-PR biến agent thành teammate có audit trail.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Jira-to-PR biến agent thành teammate có audit trail.</h1>
+    <p class="lead">Ticket, branch, commits, tests, PR tạo đường chứng cứ.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Audit trail biến agent work thành team work."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><g class=""><rect x="70" y="80" width="150" height="62" rx="8"></rect><text text-anchor="middle"><tspan x="145" y="116">Ticket</tspan></text></g><g class=""><rect x="280" y="80" width="150" height="62" rx="8"></rect><text text-anchor="middle"><tspan x="355" y="116">Branch</tspan></text></g><g class=""><rect x="490" y="80" width="150" height="62" rx="8"></rect><text text-anchor="middle"><tspan x="565" y="116">Commits</tspan></text></g><g class=""><rect x="700" y="80" width="130" height="62" rx="8"></rect><text text-anchor="middle"><tspan x="765" y="116">PR</tspan></text></g>
+        <line x1="220" y1="111" x2="280" y2="111" marker-end="url(#arrow)"></line><line x1="430" y1="111" x2="490" y2="111" marker-end="url(#arrow)"></line><line x1="640" y1="111" x2="700" y2="111" marker-end="url(#arrow)"></line>
+        <g class=""><rect x="280" y="205" width="150" height="62" rx="8"></rect><text text-anchor="middle"><tspan x="355" y="241">Test log</tspan></text></g><g class=""><rect x="490" y="205" width="150" height="62" rx="8"></rect><text text-anchor="middle"><tspan x="565" y="241">Review</tspan></text></g><line x1="565" y1="205" x2="565" y2="150" marker-end="url(#arrow)"></line></svg><figcaption>Audit trail biến agent work thành team work.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 8 · R. Đây là slide adoption rất quan trọng cho dev team. Nếu agent làm việc mà không để lại trail, review và incident follow-up sẽ khó.</div>
+  </div>
+</section>
+<section class="slide" id="slide-debug" data-title="Debugging vẫn là nghề của người.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Debugging vẫn là nghề của người.</h1>
+    <p class="lead">Agent tăng tốc vòng lặp, không thay thế root cause.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Debug loop vẫn do người ép kỷ luật."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><g class=""><rect x="100" y="135" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="172.5" y="169">Reproduce</tspan></text></g><g class=""><rect x="300" y="60" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="372.5" y="94">Isolate</tspan></text></g><g class=""><rect x="555" y="60" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="627.5" y="94">Test</tspan></text></g><g class=""><rect x="655" y="205" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="727.5" y="239">Patch</tspan></text></g>
+        <line x1="245" y1="164" x2="315" y2="105" marker-end="url(#arrow)"></line><line x1="445" y1="89" x2="555" y2="89" marker-end="url(#arrow)"></line><line x1="645" y1="118" x2="690" y2="205" marker-end="url(#arrow)"></line><line x1="655" y1="235" x2="245" y2="185" marker-end="url(#arrow)"></line></svg><figcaption>Debug loop vẫn do người ép kỷ luật.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 9 · R. Nhắc quy trình: reproduce, isolate, inspect, failing test, patch. Agent có thể làm mỗi bước nhanh hơn, nhưng không được bỏ bước.</div>
+  </div>
+</section>
+<section class="slide" id="slide-subagents" data-title="Subagents tăng throughput, đồng thời tăng điều phối.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">COMPLICATION</div>
+    <h1>Subagents tăng throughput, đồng thời tăng điều phối.</h1>
+    <p class="lead">Chỉ scale khi file ownership thật sự rõ.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Song song hóa có cả lợi ích lẫn chi phí."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><line class="axis" x1="120" y1="250" x2="780" y2="250"></line><line class="axis" x1="450" y1="65" x2="450" y2="250"></line>
+        <path class="curve" d="M140 225 C300 170, 470 125, 760 95"></path>
+        <path class="warn" d="M150 245 C350 230, 560 210, 760 135"></path>
+        <text x="240" y="105">throughput</text><text x="610" y="205">coordination cost</text></svg><figcaption>Song song hóa có cả lợi ích lẫn chi phí.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 10 · C. Đưa cảnh báo trước khi team bị hấp dẫn bởi swarms. Multi-agent là kỹ thuật tăng song song, không phải magic; chi phí merge và review cũng tăng.</div>
+  </div>
+</section>
+<section class="slide" id="slide-cloud" data-title="Cloud sandboxes mở autonomy mà không cược máy thật.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Cloud sandboxes mở autonomy mà không cược máy thật.</h1>
+    <p class="lead">Cách ly filesystem, dependencies, browser state và secrets.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Cloud execution chỉ an toàn khi có guardrail."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><path class="cloud" d="M285 190c-35 0-65-26-65-61 0-31 23-57 53-61 16-34 50-55 88-55 50 0 92 37 99 86 42 1 76 35 76 77 0 43-35 78-78 78H285z"></path>
+        <g class=""><rect x="560" y="75" width="135" height="54" rx="8"></rect><text text-anchor="middle"><tspan x="627.5" y="107">Scoped env</tspan></text></g><g class=""><rect x="560" y="150" width="135" height="54" rx="8"></rect><text text-anchor="middle"><tspan x="627.5" y="182">Logs</tspan></text></g><g class=""><rect x="560" y="225" width="135" height="54" rx="8"></rect><text text-anchor="middle"><tspan x="627.5" y="257">PR gate</tspan></text></g>
+        <line x1="520" y1="120" x2="560" y2="102" marker-end="url(#arrow)"></line><line x1="520" y1="170" x2="560" y2="177" marker-end="url(#arrow)"></line><line x1="520" y1="220" x2="560" y2="252" marker-end="url(#arrow)"></line></svg><figcaption>Cloud execution chỉ an toàn khi có guardrail.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 11 · R. Khi nói cloud, phải nói boundary. Sandbox tốt cho autonomy nhưng vẫn cần scoped secrets, logs, và gate trước production.</div>
+  </div>
+</section>
+<section class="slide" id="slide-large-codebase" data-title="Large codebases cần memory và incremental change.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Large codebases cần memory và incremental change.</h1>
+    <p class="lead">Agent phải search, đọc convention, sửa nhỏ rồi verify.</p>
+    <div class="memory"><div>AGENTS.md</div><div>Search repo</div><div>Small plan</div><div>Narrow test</div><div>Broaden verify</div></div>
+    <div class="stage-strip">▸ Beat 12 · R. Trong repo lớn, context window không thay thế documentation. Team cần code search, AGENTS.md/CLAUDE.md, plan nhỏ, tests hẹp rồi broaden.</div>
+  </div>
+</section>
+<section class="slide" id="slide-orchestrators" data-title="Orchestrators chỉ đáng dùng khi ownership rõ.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Orchestrators chỉ đáng dùng khi ownership rõ.</h1>
+    <p class="lead">Song song hóa theo module, không theo hy vọng.</p>
+    <div class="ownership"><div class="head">Backend</div><div class="head">Frontend</div><div class="head">Tests</div><div>Agent A</div><div>Agent B</div><div>Agent C</div><div class="ok">API files</div><div class="ok">UI files</div><div class="ok">E2E only</div></div>
+    <div class="stage-strip">▸ Beat 13 · R. Đặt điều kiện dùng GSD/Gastown/Agent Teams: task phân rã được, interfaces rõ, lead giữ merge quyết định. Không chạy nhiều agent vào cùng file.</div>
+  </div>
+</section>
+<section class="slide" id="slide-capstone" data-title="Capstone cho thấy agentic engineering là system design.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Capstone cho thấy agentic engineering là system design.</h1>
+    <p class="lead">Trading app cần data, UI, agents, tests và deploy gate.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Capstone là system design, không chỉ là UI demo."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><g class=""><rect x="80" y="70" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="152.5" y="104">Market data</tspan></text></g><g class=""><rect x="300" y="70" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="372.5" y="104">Backend API</tspan></text></g><g class=""><rect x="520" y="70" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="592.5" y="104">Dashboard</tspan></text></g><g class=""><rect x="685" y="200" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="757.5" y="234">Deploy gate</tspan></text></g>
+        <g class=""><rect x="180" y="205" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="252.5" y="239">Agents</tspan></text></g><g class=""><rect x="400" y="205" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="472.5" y="239">Tests</tspan></text></g>
+        <line x1="225" y1="99" x2="300" y2="99" marker-end="url(#arrow)"></line><line x1="445" y1="99" x2="520" y2="99" marker-end="url(#arrow)"></line><line x1="592" y1="128" x2="685" y2="200" marker-end="url(#arrow)"></line><line x1="325" y1="234" x2="400" y2="234" marker-end="url(#arrow)"></line><line x1="545" y1="234" x2="685" y2="229" marker-end="url(#arrow)"></line></svg><figcaption>Capstone là system design, không chỉ là UI demo.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 14 · R. Nối lại khóa học: capstone không chỉ là app trading, mà là bài system design cho agent workflow. Chú ý market data terms, rate limits và secret handling.</div>
+  </div>
+</section>
+<section class="slide" id="slide-adoption" data-title="Adoption nên bắt đầu từ một golden workflow nhỏ.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Adoption nên bắt đầu từ một golden workflow nhỏ.</h1>
+    <p class="lead">Một issue-to-PR pilot tốt hơn mười tool demo.</p>
+    <div class="roadmap"><div><b>1</b><span>Pick one workflow</span></div><div><b>2</b><span>Write repo memory</span></div><div><b>3</b><span>PR, review, measure</span></div></div>
+    <div class="stage-strip">▸ Beat 15 · R. Đề xuất cho team: chọn một workflow nhỏ, đo time-to-PR, review quality, rollback. Mở rộng sau khi invariant hoạt động.</div>
+  </div>
+</section>
+<section class="slide" id="slide-policy" data-title="Team policy phải nói rõ agent được tự chạy khi nào.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Team policy phải nói rõ agent được tự chạy khi nào.</h1>
+    <p class="lead">Permission, secrets, tests, review, deploy đều cần rule.</p>
+    <div class="checks"><div>Permission mode defined</div><div>Secrets never pasted</div><div>Tests before PR</div><div>Human deploy gate</div></div>
+    <div class="stage-strip">▸ Beat 16 · R. Đây là guardrail vận hành. Policy tốt ngắn, cụ thể, nằm trong repo, và cập nhật khi tool thay đổi.</div>
+  </div>
+</section>
+<section class="slide" id="slide-fast-track" data-title="Fast-track: xem kỹ phần lõi, lướt demo còn lại.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Fast-track: xem kỹ phần lõi, lướt demo còn lại.</h1>
+    <p class="lead">49 bài core = khoảng 8h 38m xem kỹ.</p>
+    <div class="bars"><div><span style="width:52%"></span><b>49</b><em>core</em></div><div><span style="width:41%"></span><b>39</b><em>skim</em></div><div><span style="width:7%"></span><b>7</b><em>skip</em></div></div>
+    <div class="stage-strip">▸ Beat 17 · R. Chỉ ra cách học: xem kỹ mental model, context, CLI workflow, MCP/skills/plugins, debugging, sandbox, multi-agent, capstone recap. Demo-heavy lectures lướt lấy pattern.</div>
+  </div>
+</section>
+<section class="slide" id="slide-next-step" data-title="Next step: build project thật, review như owner.">
+  <span class="slide-num"></span>
+  <div class="wrap">
+    <div class="slide-kicker">RESOLUTION</div>
+    <h1>Next step: build project thật, review như owner.</h1>
+    <p class="lead">Agent viết code; team chịu trách nhiệm chất lượng.</p>
+    <figure class="viz"><svg viewBox="0 0 900 330" role="img" aria-label="Học thật bắt đầu khi review project thật."><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z"></path></marker></defs><g class=""><rect x="80" y="135" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="152.5" y="169">Task</tspan></text></g><g class=""><rect x="285" y="135" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="357.5" y="169">Agent</tspan></text></g><g class=""><rect x="490" y="135" width="145" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="562.5" y="169">Review</tspan></text></g><g class=""><rect x="695" y="135" width="125" height="58" rx="8"></rect><text text-anchor="middle"><tspan x="757.5" y="169">Learn</tspan></text></g>
+        <line x1="225" y1="164" x2="285" y2="164" marker-end="url(#arrow)"></line><line x1="430" y1="164" x2="490" y2="164" marker-end="url(#arrow)"></line><line x1="635" y1="164" x2="695" y2="164" marker-end="url(#arrow)"></line>
+        <path class="curve" d="M760 135 C740 45, 150 45, 120 135" marker-end="url(#arrow)"></path></svg><figcaption>Học thật bắt đầu khi review project thật.</figcaption></figure>
+    <div class="stage-strip">▸ Beat 18 · R. Kết bằng hành động: chọn một internal workflow, viết AGENTS.md, chạy một agent task nhỏ, mở PR, review nghiêm túc. Đó là điểm chuyển từ học sang năng lực.</div>
+  </div>
+</section>
+<div class="chrome" aria-hidden="false">
+  <button id="prev" title="Previous slide">↑</button>
+  <button id="next" title="Next slide">↓</button>
+  <span id="count">01 / 18</span>
+  <div class="bar"><i></i></div>
+  <button id="grid" title="Grid overview">G</button>
+  <button id="stage" title="Toggle speaker notes">S</button>
+</div>
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const total = slides.length;
+  const count = document.querySelector('#count');
+  const bar = document.querySelector('.bar i');
+  slides.forEach((slide, index) => {
+    slide.querySelector('.slide-num').textContent = String(index + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+  });
+  const currentIndex = () => {
+    const h = location.hash.slice(1);
+    const byHash = slides.findIndex(s => s.id === h);
+    if (byHash >= 0) return byHash;
+    const mid = scrollY + innerHeight / 2;
+    return Math.max(0, slides.findIndex(s => s.offsetTop + s.offsetHeight > mid));
+  };
+  const go = (index) => {
+    const safe = Math.max(0, Math.min(total - 1, index));
+    slides[safe].scrollIntoView({ behavior: 'smooth' });
+    history.replaceState(null, '', '#' + slides[safe].id);
+    update();
+  };
+  const update = () => {
+    const i = currentIndex();
+    count.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+    bar.style.width = (((i + 1) / total) * 100).toFixed(2) + '%';
+  };
+  document.querySelector('#prev').addEventListener('click', () => go(currentIndex() - 1));
+  document.querySelector('#next').addEventListener('click', () => go(currentIndex() + 1));
+  document.querySelector('#stage').addEventListener('click', () => document.body.classList.toggle('hide-stage'));
+  document.querySelector('#grid').addEventListener('click', () => document.body.classList.toggle('grid-mode'));
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', update);
+  addEventListener('keydown', (event) => {
+    if (['ArrowDown', 'ArrowRight', ' ', 'PageDown'].includes(event.key)) { event.preventDefault(); go(currentIndex() + 1); }
+    if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); go(currentIndex() - 1); }
+    if (event.key.toLowerCase() === 's') document.body.classList.toggle('hide-stage');
+    if (event.key.toLowerCase() === 'g' || event.key === 'Escape') document.body.classList.toggle('grid-mode');
+    if (event.key.toLowerCase() === 'f') document.documentElement.requestFullscreen?.();
+  });
+  slides.forEach((slide, index) => slide.addEventListener('click', () => {
+    if (document.body.classList.contains('grid-mode')) {
+      document.body.classList.remove('grid-mode');
+      go(index);
+    }
+  }));
+  if (location.hash) {
+    const index = slides.findIndex(s => s.id === location.hash.slice(1));
+    if (index >= 0) setTimeout(() => go(index), 0);
+  }
+  update();
+})();
+</script>
+</body>
+</html>
